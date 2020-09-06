@@ -12,3 +12,9 @@
 		4. git remote add origin + 远程仓库地址 //链接远程仓库，创建主分支
 		5. git pull origin master --allow-unrelated-histories// 把本地仓库的变化连接到远程仓库主分支
 		6. git push origin master:master //把本地仓库的文件推送到远程仓库
+
+- [x] 课上代码消化
+- [ ] 知识点整理
+- [ ] 五子棋算法优化
+- [ ] 前端知识架构
+- [ ] 红绿灯小结练习代码提交
