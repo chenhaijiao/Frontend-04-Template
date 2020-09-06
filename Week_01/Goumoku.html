@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="selenium.base" href="https://www.ctrip.com/" />
+    <title>Goumoku</title>
+</head>
+
+<body>
+    <div class="all">
+        <div class="inall" id="board">
+        </div>
+        <div class="chessDiv" id="chess">
+        </div>
+    </div>
+</body>
+
+<style>
+     .all{
+         width: 704px;
+         height: 704px;
+         position: absolute;
+         z-index: 1;
+        background: #F9CC9D;
+    }
+    .inall{
+        top: 30px;
+        left: 30px;
+        right:30px;
+        bottom: 30px;
+        width: 644px;
+        height: 644px;
+        position: relative;
+        background: #F9CC9D;
+        /* border: solid 1px black; */
+        border-left: solid 1px black;
+        border-top: solid 1px black;
+
+    }
+    .cell{
+        width: 45px;
+        height: 45px;
+        background: #F9CC9D;
+        display: inline-block;
+        vertical-align: middle;
+         border-right: solid 1px black;
+         border-bottom: solid 1px black;
+    }
+    .chess-black{
+        background:black;
+    }
+    .chess-white{
+       background:white;
+    }
+    .chess-none{
+        width: 36px;
+        height: 36px;
+        /* background:red; */
+        display: inline-block;
+        vertical-align: middle;
+        border-radius: 18px;
+        margin: 5px;
+        /* border: solid 1px white; */
+    }
+    .chessDiv{
+         top: 52.7px;
+         left: 52.7px;
+         right:52.7px;
+         bottom: 52.7px;
+         width: 598px;
+         height: 598px;
+         position: absolute;
+    }
+    
+
+     
+
+</style>
+<script>
+    let pattern = new Array(169);
+    for(let i = 0; i < 169; i++){   
+            pattern[i] = 0;
+    }
+    let flag = true;
+    pattern[45] = 2;
+    pattern[44] = 1;
+    let color = 2;//黑子先下
+    function showAll(pattern){
+        let board = document.getElementById("board");
+        board.innerHTML = "";//重新画
+        for(let i = 0 ; i < 14 ;i++){
+                for(let j = 0 ; j < 14 ;j++){
+                    let cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    // cell.innerText = 
+                    board.appendChild(cell);
+                }
+                board.appendChild(document.createElement("br"));
+        } 
+        let chess = document.getElementById("chess");
+        chess.innerHTML = "";//重新画
+        for(let i = 0 ; i < 13 ;i++){
+                for(let j = 0 ; j < 13 ;j++){
+                    let cell= document.createElement("div");
+                    cell.classList.add("chess-none");
+                    // cell.classList.add("chess-white");
+                    // cell.classList.add("chess-black");
+                    pattern[i*13+j] == 2?cell.classList.add("chess-black"):
+                    pattern[i*13+j] == 1?cell.classList.add("chess-white"):"";
+                    cell.id = "id_"+(i*13+j);
+                    // console.log(cell.id)
+                    cell.addEventListener("click",()=>userMove(i,j));
+                    chess.appendChild(cell);
+                }
+                chess.appendChild(document.createElement("br"));
+        } 
+        // show(5,5)
+    }
+    function show(x,y){
+         let id = "id_"+(x*13+y);
+         let cell= document.getElementById(id)
+         pattern[x*13+y] == 2?cell.classList.add("chess-black"):
+         pattern[x*13+y] == 1?cell.classList.add("chess-white"):"";
+    }
+    
+    function userMove(x,y){
+        if(flag){
+            pattern[x*13+y] = color;
+            show(x,y);//放在alert前面或者后面，都改变不了alert先出现的顺序
+            if(check(pattern,color,x,y)){
+                flag = false;
+                alert(color == 2 ? "black is winner":"white is winner" );
+            }
+            color = 3-color;
+            //判断将要落子的这方是否有可能会赢
+            if(willWin(pattern,color)&&flag){
+                console.log(color == 2 ? "black will win":"white will win" )
+            }
+            if(flag){
+                computerMove(x,y)
+            }
+        }
+    }
+    function computerMove(x,y){
+        let choice = bestChoice(pattern,color,x,y);
+        if(choice.point){
+            pattern[choice.point[0]*13+choice.point[1]] = color;  
+        }
+        show(choice.point[0],choice.point[1]);
+        if(check(pattern,color,choice.point[0],choice.point[1])){
+            flag = false;
+            alert(color == 2 ? "black is winner":"white is winner" );
+        }
+        color = 3-color;
+        if(willWin(pattern,color)&&false){
+            console.log(color == 2 ? "black will win":"white will win" )
+        }
+    }
+    function check(pattern,color,x,y){
+       {
+            let win = false;
+            let length = 0;
+            for(let i = 0; i < 13; i++){
+                if(pattern[i*13+y] == color){
+                    length++;
+                    if(length == 5){
+                        win = true;
+                        return true;
+                    }
+                }else{
+                    length = 0;
+                }
+                //当前落子方，检查当前棋子一列是否已赢
+            }
+       }
+        {
+            let win = false;
+            let length = 0;
+            for(let i = 0; i < 13; i++){
+                if(pattern[x*13+i] == color){
+                    length++;
+                    if(length == 5){
+                        win = true;
+                        return true;
+                    }
+                }else{
+                    length = 0;
+                }
+                //当前落子方，检查当前棋子一行是否已赢
+            }
+        }
+        {
+            let win = false;
+            let length = 0;
+            
+            for(let i = -4; i < 5; i++){
+                if( i+x < 0 || i+x> 12) continue;
+                for(let j = -4; j < 5; j++){
+                    if( j+y < 0 || j+y> 12 ||i+y < 0||i+y> 12|| j+x < 0|| j+x> 12 || j-i)continue;
+                    if(pattern[(i+x)*13+j+y] == color){
+                        length++;
+                        if(length == 5){
+                            win = true;
+                            return true;
+                        }
+                    }else{
+                        length = 0;
+                    }
+                }
+                //当前落子方，检查当前棋子斜排是否已赢
+            }
+        }
+        {
+            let win = false;
+            let length = 0;
+            
+            for(let j = -4; j < 5; j++){
+                if( j+y < 0 || j+y> 12) continue;
+                for(let i = -4; i < 5; i++){
+                    if( i+x < 0 || i+x> 12||j+i!=0)continue;
+                    // console.log((i)+","+(j))
+                    if(pattern[(i+x)*13+j+y] == color){
+                        length++;
+                        if(length == 5){
+                            win = true;
+                            return true;
+                        }
+                    }else{
+                        length = 0;
+                    }
+                }
+                //当前落子方，检查当前棋子斜排是否已赢
+            }
+        }
+        return false;
+    }
+    function clone(pattern){
+        return Object.create(pattern);
+    }
+    function willWin(pattern,color){
+        for(let i = 0; i < 13; i++){
+            for(let j = 0; j < 13; j++){
+                if(pattern[i*13+j]){
+                    continue;
+                }
+                let tmp = clone(pattern);
+                tmp[i*13+j] = color;
+                if(check(tmp,color,i,j)){
+                    // return true;
+                    return [i,j];
+                }
+            }
+        }
+        return null;
+    }
+    function addHeight(length){
+        switch(length){
+            case 0 : return 0;
+            case 1 : return 3;
+            case 2 : return 7;
+            case 3 : return 11;
+            case 4 : return 17;
+            default : return 0;
+        }
+    }
+    function subHeight(length){
+        switch(length){
+            case 0 : return 0;
+            case 1 : return 2;
+            case 2 : return 4;
+            case 3 : return 6;
+            case 4 : return 8;
+            default : return 0;
+        }
+    }
+    function maxSubHeight(length){
+         switch(length){
+            case 0 : return 0;
+            case 1 : return 3;
+            case 2 : return 6;
+            case 3 : return 8;
+            case 4 : return 10;
+            default : return 0;
+        }
+    }
+    function getPointHeight(pattern,color,x,y){
+        let height = 0;//不包含五子连棋的情况，作为递归结束条件已经判断过了
+        {
+            //包含此点的列，计算连续的棋子个数，以及旁边是否有障碍
+            let left = 0;
+            let right = 0;
+            let length = 0;
+            outer:for (let i = -3; i < 4; i++) {
+                if( i > 0 && pattern[(x+i)* 13 + y] != color){
+                    right = i;
+                    break outer;
+                }
+                if (x + i >= 0 && x + i < 13&& pattern[(x+i)* 13 + y] == color) {
+                    length++;
+                    right = i == 3? 3 : i+1;
+                } else {
+                    length = 0;
+                    left = i;
+                }
+                //当前落子方，检查当前棋子一列连续个数
+            }
+            //计算相应的权值
+            height += addHeight(length);
+            if(pattern[(x+right)*13+y] == 3-color || pattern[(x+left)*13+y] == 3-color){
+                height -= maxSubHeight(length);
+            }else if(pattern[(x+right)*13+y] == 3-color || pattern[(x+left)*13+y] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= subHeight(length);
+            }
+            
+            // console.log("列排--length:"+length+",height:"+height);
+        }
+        {   
+            let left = 0;
+            let right = 0;
+            let length = 0;
+            outer:for (let i = -3; i < 4; i++) {
+                if( i > 0 && pattern[x* 13 + y+i] != color){
+                    right = i;
+                    break outer;
+                }else if (y + i >= 0 && y + i < 13 &&pattern[x* 13 + y+i] == color) {
+                    length++;
+                    right = i == 3? 3 : i+1;
+                } else {
+                    length = 0;
+                    left = i;
+                }
+                //当前落子方，检查当前棋子一行连续个数
+            }
+            //计算相应的权值
+            height += addHeight(length);
+            if(pattern[x*13+y+right] == 3-color && pattern[x*13+y+left] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= maxSubHeight(length);
+            }else if(pattern[x*13+y+right] == 3-color || pattern[x*13+y+left] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= subHeight(length);
+            }
+            // console.log("length:"+length+",height:"+height);
+        }
+        {
+            let left = [0,0];
+            let right = [0,0];
+            let length = 0;
+            outer:for (let i = -3; i < 4; i++) {
+                if (i + x < 0 || i + x > 12) continue;
+                for (let j = -3; j < 4; j++) {
+                    if (j + y < 0 || j + y > 12 || i + y < 0 || i + y > 12 || j + x < 0 || j + x > 12 || j - i) continue;
+                    if(i > 0 && j > 0 && pattern[(i + x) * 13 + j + y] != color){
+                        right[0] = i;
+                        right[1] = j;
+                        break outer;
+                    }else if (pattern[(i + x) * 13 + j + y] == color) {
+                        length++;
+                        right[0] = i+1;
+                        right[1] = j+1;
+                        if(right[0] == 3){
+                            right[1] = j;
+                        }
+                        if(right[1] == 3){
+                            right[0] = i;
+                        }
+                    } else {
+                        length = 0;
+                        left[0] = i;
+                        left[1] = j;
+                    }
+                }
+                //当前落子方，检查当前棋子斜排是否已赢
+            }
+             //计算相应的权值
+             height += addHeight(length);
+             left[0] += x;
+             left[1] += y;
+             right[0] += x;
+             right[1] += y;
+             if(pattern[left[0]*13+left[1]] == 3-color && pattern[right[0]*13+right[1]] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= maxSubHeight(length);
+             }else if(pattern[left[0]*13+left[1]] == 3-color || pattern[right[0]*13+right[1]] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= subHeight(length);
+             }
+        }
+        {
+            let left = [0,0];
+            let right = [0,0];
+            let length = 0;
+
+            outer:for (let j = -3; j < 4; j++) {
+                if (j + y < 0 || j + y > 12) continue;
+                for (let i = -3; i < 4; i++) {
+                    if (i + x < 0 || i + x > 12 || j + i != 0) continue;
+                    if( i > 0 && j > 0 && pattern[(i + x) * 13 + j + y] != color ){
+                        right[0] = i;
+                        right[1] = j;
+                        break outer;
+                    }else if (pattern[(i + x) * 13 + j + y] == color) {  
+                        length++;
+                        right[0] = i+1;
+                        right[1] = j+1;
+                        if(right[0] == 3){
+                            right[1] = j;
+                        }
+                        if(right[1] == 3){
+                            right[0] = i;
+                        }
+
+                    } else if(i>0&&j<0){
+                        length = 0;
+                        left[0] = i;
+                        left[1] = j;
+                    }
+                }
+                //当前落子方，检查当前棋子斜排是否已赢
+            }
+             //计算相应的权值
+             height += addHeight(length);
+              if(color==2)
+                console.log(left[0]+","+left[1]+",length:"+length)
+             left[0] += x;
+             left[1] += y;
+             right[0] += x;
+             right[1] += y;
+             if(pattern[left[0]*13+left[1]] == 3-color && pattern[right[0]*13+right[1]] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= maxSubHeight(length);
+             }else if(pattern[left[0]*13+left[1]] == 3-color || pattern[right[0]*13+right[1]] == 3-color){
+                //连子旁边有障碍，需要将减少相应的优选权值
+                height -= subHeight(length);
+             }
+        }
+        return height;
+    }
+    function bestChoice(pattern,color,x,y){
+        let p;
+        if(p = willWin(pattern,color)){
+            return {
+                point:p,
+                result:1000
+            }
+        }
+        let rr = getPointHeight(pattern,3-color,x,y)+7
+        console.log("x:"+x+",y:"+y+",rr:"+rr)
+        let result = rr;
+        let length = -10;
+        let point = null;
+        let min = 100;
+        let minPoint = null;
+        for(let i = 0; i < 13; i++){
+            for(let j = 0; j < 13; j++){
+                if(pattern[i*13+j])
+                continue;
+                let tmp = clone(pattern);
+                tmp[i*13+j] = color;
+                let r = getPointHeight(tmp,color,i,j)
+                if(r > result){
+                    result = r;
+                    point = [i,j]
+                    console.log("AI--result1:"+result)
+                }
+            }
+        }
+        if(point==null){
+            for(let i = 0; i < 13; i++){
+                for(let j = 0; j < 13; j++){
+                    if(pattern[i*13+j])
+                    continue;
+                    let tmp = clone(pattern);
+                    tmp[i*13+j] = color;
+                    let r = getPointHeight(tmp,3-color,x,y)
+                    if(r < result){
+                        result = r;
+                        point = [i,j]
+                        console.log("AI--result2:"+result)
+                    }
+                }
+            }
+        }
+        
+        return {
+            point: point,
+            result: point ? result : 0
+        }
+    }
+    showAll(pattern);
+    // window.onload = function(){
+    //     show(5,5)
+    // }
+</script>
+</html>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="selenium.base" href="https://www.ctrip.com/" />
+    <title>2-BreadthFirst</title>
+</head>
+<style>
+    .cell {
+        display: inline-block;
+        line-height: 7px;
+        width: 6px;
+        height: 6px;
+        background-color: gainsboro;
+        border-bottom: solid 1px white;
+        border-right: solid 1px white;
+        vertical-align: bottom;
+        /* top、bottom都一致 */
+    }
+
+    #container {
+        width: 701px;
+        line-height: 0;
+        /* 设置父元素的行内距为0,取消子元素的行距 */
+    }
+</style>
+<body>
+    <div id="container"></div>
+    <button onclick="localStorage['map'] = JSON.stringify(map)">save</button>
+</body>
+<script>
+    let map = localStorage["map"] ? JSON.parse(localStorage["map"]) : Array(10000).fill(0);
+    let container = document.getElementById("container");
+    for(let x = 0; x < 100; x++){
+        for(let y = 0; y < 100; y++){
+            let cell = document.createElement("div");
+            cell.classList.add("cell");
+            if(map[100*x + y] == 1){
+                cell.style.backgroundColor = "black";
+            }
+            cell.addEventListener("mousemove",() => {
+                if(mousedown){
+                    if(clear){
+                        cell.style.backgroundColor = "";
+                        map[x*100 + y] = 0;
+                    }else{
+                        cell.style.backgroundColor = "black"
+                        map[x*100 + y] = 1;
+                    }
+                }
+            });
+            container.appendChild(cell);
+        }
+    }
+    let mousedown = false;
+    let clear = false;
+    document.addEventListener("mousedown",e => {
+        mousedown = true;
+        clear = (e.which === 3 )
+        //一开始mousedown的时候是按右键，所以e.which置为3
+    })
+    document.addEventListener("mouseup",() => {
+        mousedown = false;
+    })
+    // document.addEventListener("contextmenu", e => e.preventDefault());
+    //因为要是用右键，所以要将弹出菜单的事件注销掉
+    function path(map, start, end){
+        var queue = [start];
+        function insert(x,y){
+            if(x < 0 || x >= 100 || y < 0 || y >= 100)
+            return ;
+            if(map[x*100 + y ])
+            return ;
+            //被遍历过，添加一个特殊状态标识不再重复
+            map[x*100 + y] = 2;
+            queue.push([x,y])
+
+        }
+        while(queue.length){
+            let [x,y] = queue.shift();
+            console.log(x,y)
+            if(x === end[0] && y == end[1]){
+                return true;
+            }
+            insert(x-1,y);
+            insert(x,y-1);
+            insert(x+1,y)
+            insert(x,y+1)
+        }
+        return false;
+    }
+</script>
+</html>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="selenium.base" href="https://www.ctrip.com/" />
+    <title>6-HeuristicSearch</title>
+</head>
+<style>
+    .cell {
+        display: inline-block;
+        line-height: 7px;
+        width: 6px;
+        height: 6px;
+        background-color: gainsboro;
+        border-bottom: solid 1px white;
+        border-right: solid 1px white;
+        vertical-align: bottom;
+        /* top、bottom都一致 */
+    }
+
+    #container {
+        width: 701px;
+        line-height: 0;
+        /* 设置父元素的行内距为0,取消子元素的行距 */
+    }
+</style>
+
+<body>
+    <div id="container"></div>
+    <button onclick="localStorage['map'] = JSON.stringify(map)">save</button>
+</body>
+<script>
+    let map = localStorage["map"] ? JSON.parse(localStorage["map"]) : Array(10000).fill(0);
+    for(let i = 0 ; i < 100 ; i++){
+            for(let j = 0 ; j < 100 ; j++){
+                if(map[i*100 + j] == 2){
+                    map[i*100 + j] = 0;
+                }
+            }
+        }
+    let container = document.getElementById("container");
+    for (let x = 0; x < 100; x++) {
+        for (let y = 0; y < 100; y++) {
+            let cell = document.createElement("div");
+            cell.classList.add("cell");
+            if (map[100 * x + y] == 1) {
+                cell.style.backgroundColor = "black";
+            }
+            cell.addEventListener("mousemove", () => {
+                if (mousedown) {
+                    if (clear) {
+                        cell.style.backgroundColor = "";
+                        map[x * 100 + y] = 0;
+                    } else {
+                        cell.style.backgroundColor = "black"
+                        map[x * 100 + y] = 1;
+                    }
+                }
+            });
+            container.appendChild(cell);
+        }
+    }
+    let mousedown = false;
+    let clear = false;
+    document.addEventListener("mousedown", e => {
+        mousedown = true;
+        clear = (e.which === 3)
+        //一开始mousedown的时候是按右键，所以e.which置为3
+    })
+    document.addEventListener("mouseup", () => {
+        mousedown = false;
+    })
+    // document.addEventListener("contextmenu", e => e.preventDefault());
+    //因为要是用右键，所以要将弹出菜单的事件注销掉
+    function sleep(t) {
+        return new Promise(function (resolve) {
+            setTimeout(resolve, t)
+        });
+    }
+    class Sorted{
+        constructor(data, compare){
+            //此处没有传start值,将点传给data
+            this.data = data.slice();
+            this.compare = compare || ((a, b) => a - b); 
+        }
+        take(){
+            //挑选后拿走一个点
+            if(!this.data.length){
+                return;
+            }
+            let min = this.data[0];
+            let minIndex = 0;
+            for(let i = 1 ; i < this.data.length ; i++){
+                // console.log(this.data[i]+","+min)
+                if(this.compare(this.data[i], min) < 0){
+                    min = this.data[i];
+                    minIndex = i;
+                }
+            }
+            //这一段很巧妙,避开splice的O(n),用置换O(1)
+            this.data[minIndex] = this.data[this.data.length - 1];
+            this.data.pop();
+            return min;
+        }
+        give(v){
+            this.data.push(v);
+            //给栈一个点
+        }
+    }
+    async function path(map, start, end) {
+        function distance(point){
+            //新增加的乘方语句，比较距离，为了节约运算没有再开平方
+            return (point[0]-end[0] ) ** 2 + (point[1]-end[1]) **2;
+        }
+        let table = Object.create(map);
+        let queue = new Sorted([start],(a,b) => (distance(a) - distance(b)))
+        //Sorted函数里边的compare箭头函数最好不要打{},会不由自主的带上; 导致无法进行compare,从而变成深度优先算法,走满整个屏幕
+        async function insert(x, y, pre) {
+            if (x < 0 || x >= 100 || y < 0 || y >= 100)
+                return;
+            if (map[x * 100 + y])
+                return;
+            // await sleep(5); //ms
+            //被遍历过，添加一个特殊状态标识不再重复
+            container.children[x * 100 + y].style.backgroundColor = "lightgreen";
+            map[x * 100 + y] = 2;
+            table[x * 100 + y] = pre;
+            queue.give([x, y]);
+        }
+        while (queue.data.length) {
+            let [x, y] = queue.take();
+            // console.log(x, y)
+            if (x === end[0] && y === end[1]) {
+                let path = [];
+                while (x != start[0] || y != start[1]) {
+                    container.children[x * 100 + y].style.backgroundColor = "purple";
+                    path.push(map[x * 100 + y]);
+                    [x, y] = table[x * 100 + y];
+                    await sleep(3);
+                }
+                return path;
+            }
+            await insert(x - 1, y, [x, y]);
+            await insert(x, y - 1, [x, y]);
+            await insert(x + 1, y, [x, y]);
+            await insert(x, y + 1, [x, y]);
+
+            await insert(x - 1, y - 1, [x, y]);
+            await insert(x + 1, y - 1, [x, y]);
+            await insert(x - 1, y + 1, [x, y]);
+            await insert(x + 1, y + 1, [x, y]);
+        }
+        //最后Promise,打印的resolved为函数return值false
+        return null;
+    }
+</script>
+
+</html>
