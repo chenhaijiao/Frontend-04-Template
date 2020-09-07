@@ -84,7 +84,7 @@
             this.compare = compare || ((a, b) => a - b);
         }
         take() {
-            //挑选后拿走一个点,因为是二叉堆排序,最前面的一定是最小的（最优）
+            //二叉堆排序,最前面的一定是最小的（最优）
             if (!this.data.length) {
                 return;
             }
@@ -93,8 +93,7 @@
             while(i < this.data.length){
                 if(i*2 + 1 >= this.data.length)
                     break;
-                if(i*2 + 2 >= this.data.length){
-                    //i*2+1刚好是最后那个元素
+                if(i*2 + 2 >= this.data.length){           
                     this.data[i] = this.data[i*2+1];
                     i = i * 2 + 1;
                     break;
@@ -108,6 +107,7 @@
                 }
             }
             if(i < this.data.length - 1){
+                //说明倒数第二个数的值被父节点复制，属于“空”节点，需要将最后一个节点赋值给此点，进行一次堆调整
                 this.insertAt(i, this.data.pop())
             }else{
                 this.data.pop()
@@ -121,11 +121,11 @@
                 this.data[i] = this.data[Math.floor((i-1)/2)];
                 this.data[Math.floor((i-1)/2)] = v;
                 i = Math.floor((i-1)/2);
+                //此处可以应用位运算 >>> 0 / >> 0,直接取整，最小传值为 i = 1,运算过后也不会有 i < 0的情况存在
             }
             //给栈一个点
         }
         insert(v){
-            // console.log(v);
             this.insertAt(this.data.length, v);
         }
         get length(){
