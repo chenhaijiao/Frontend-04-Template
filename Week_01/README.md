@@ -1,8 +1,9 @@
 # 学习笔记  
 ## 第一周
-https://www.jianshu.com/p/40ffdd0654f4  
-https://www.cnblogs.com/alex-415/p/6912294.html  
-https://blog.csdn.net/u012145252/article/details/80628451  
+>参考网址  
+>>https://www.jianshu.com/p/40ffdd0654f4  
+>>https://www.cnblogs.com/alex-415/p/6912294.html  
+>>https://blog.csdn.net/u012145252/article/details/80628451  
 #### 当在GitHub中fork了一个项目，如何建立本地仓库与远程仓库的连接  
 1. 先下载项目到本地  
 2. 保证对项目内容先不做更改  
