@@ -77,34 +77,59 @@
         //新增加的乘方语句，比较距离，为了节约运算没有再开平方
         return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
     }
-    class Sorted {
+    class BinaryHeapSorted {
         constructor(data, compare) {
             //此处没有传start值,将点传给data
             this.data = data.slice();
             this.compare = compare || ((a, b) => a - b);
         }
         take() {
-            //挑选后拿走一个点
+            //挑选后拿走一个点,因为是二叉堆排序,最前面的一定是最小的（最优）
             if (!this.data.length) {
                 return;
             }
             let min = this.data[0];
-            let minIndex = 0;
-            for (let i = 1; i < this.data.length; i++) {
-                // console.log(this.data[i]+","+min)
-                if (this.compare(this.data[i], min) < 0) {
-                    min = this.data[i];
-                    minIndex = i;
+            let i = 0;
+            while(i < this.data.length){
+                if(i*2 + 1 >= this.data.length)
+                    break;
+                if(i*2 + 2 >= this.data.length){
+                    //i*2+1刚好是最后那个元素
+                    this.data[i] = this.data[i*2+1];
+                    i = i * 2 + 1;
+                    break;
+                }
+                if(this.compare(this.data[i*2+1], this.data[i*2+2]) < 0){
+                    this.data[i] = this.data[i*2+1];
+                    i = i * 2 + 1;
+                }else{
+                    this.data[i] = this.data[i*2+2];
+                    i = i * 2 + 2;
                 }
             }
-            //这一段很巧妙,避开splice的O(n),用置换O(1)
-            this.data[minIndex] = this.data[this.data.length - 1];
-            this.data.pop();
+            if(i < this.data.length - 1){
+                this.insertAt(i, this.data.pop())
+            }else{
+                this.data.pop()
+            }
             return min;
         }
-        give(v) {
-            this.data.push(v);
+        insertAt(i,v) {
+            //给一个点进来，需要进行堆排序
+            this.data[i] = v;
+            while(i>0 && this.compare(v,this.data[Math.floor((i-1)/2)]) < 0){
+                this.data[i] = this.data[Math.floor((i-1)/2)];
+                this.data[Math.floor((i-1)/2)] = v;
+                i = Math.floor((i-1)/2);
+            }
             //给栈一个点
+        }
+        insert(v){
+            // console.log(v);
+            this.insertAt(this.data.length, v);
+        }
+        get length(){
+            return this.data.length;
         }
     }
     async function path(map, start, end) {
@@ -113,7 +138,7 @@
             return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
         }
         let table = Object.create(map);
-        let queue = new Sorted([start], (a, b) => (distance(a) - distance(b)))
+        let queue = new BinaryHeapSorted([start], (a, b) => (distance(a) - distance(b)))
         //Sorted函数里边的compare箭头函数最好不要打{},会不由自主的带上; 导致无法进行compare,从而变成深度优先算法,走满整个屏幕
         async function insert(x, y, pre) {
             if (x < 0 || x >= 100 || y < 0 || y >= 100)
@@ -125,7 +150,7 @@
             container.children[x * 100 + y].style.backgroundColor = "lightgreen";
             map[x * 100 + y] = 2;
             table[x * 100 + y] = pre;
-            queue.give([x, y]);
+            queue.insert([x, y]);
         }
         while (queue.data.length) {
             let [x, y] = queue.take();
@@ -133,7 +158,7 @@
             if (x === end[0] && y === end[1]) {
                 let path = [];
                 while (x != start[0] || y != start[1]) {
-                    container.children[x * 100 + y].style.backgroundColor = "purple";
+                    container.children[x * 100 + y].style.backgroundColor = "yellow";
                     path.push(map[x * 100 + y]);
                     [x, y] = table[x * 100 + y];
                     await sleep(3);

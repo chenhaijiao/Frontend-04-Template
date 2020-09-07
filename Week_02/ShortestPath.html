@@ -133,6 +133,7 @@
                 preHeight = preNode[pre[0]*100 + pre[1]].height;
                 //  console.log("currentHeight: "+currentHeight + "newHeight"+(preHeight+height));
                 if(preHeight + height < currentHeight){
+                    //启发函数
                    preNode[x*100 + y].pre = pre;
                    preNode[x*100 + y].height = preHeight + height;
                    queue.give([x, y]);
