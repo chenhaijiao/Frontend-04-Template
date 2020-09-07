@@ -28,7 +28,8 @@
 ## 函数 
 1. js中匿名函数的不断重复使用和声明函数的不断重复使用，性能上有差距吗？
 ### 函数表达式  
-2. ```
+2. 
+  ```
   const factorial = function fac(n) {return n<2 ? 1 : n*fac(n-1)};
   console.log(factorial(3));
   ```  
