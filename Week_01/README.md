@@ -193,17 +193,210 @@ var myvar = "my value";
 #### 字面量 (Literals)
 22. 字面量是一种常量，程序运行时不可改动，就相当于const的数组类型，不被保护，但是使用了字面量就估计可以使用了
     + 数组字面量（Array Literals）
-        - 一个封闭在方括号中的表达式列表-----表达式列表？？没看出来，例子就是单纯的字符串
-        - 数组字面值也是一种对象初始化器 --- 注意是字面值，不是字面量---对象初始化器是个啥东西，没学过
     + 布尔字面量（Boolean Literals）
     + 浮点数字面量（Floating-point Literals）
     + 整数（Integers） --- 注意这里加了个s，也没说是字面量，但const可以直接保护整数常量，可能字面量就需求不太大了吧
     + 对象字面量（Object Literals）
     + RegExp Literals
     + 字符串字面量（String Literals）
-
-
- 
+23. 数组字面量（Array Literals）
+    + 基础
+        - 一个封闭在方括号中的表达式列表-----表达式列表？？没看出来，例子就是单纯的字符串
+        - 数组字面值也是一种对象初始化器 --- 注意是字面值，不是字面量---对象初始化器是个啥东西，没学过
+        - 感觉挺不容易的，如果在顶层脚本里边用字面量创建数组，那么每次执行到包含数组字面量表达式的时候，都会对整个数组进行解释；
+      另一方面，在函数中使用的数组，每一次使用的时候都会被函数创建一次
+        - 数组字面量其实也是一个数组对象，其实看着就知道，赋值的时候就是按照数组那样去赋值的
+    + 数组字面值中多余的逗号
+        - 如果在同一行中连写两个逗号（，），就会有一个没有赋值的undefined 在这个位置
+        - 如果在尾部加了一个逗号，将会被忽略
+            + 在早期版本的浏览器中，尾部的逗号会产生错误，所以最好是不要加
+            + 现在的浏览器版本好像鼓励添加最后一个逗号，因为当在末尾的时候加一个字面量的时候，如果不加尾部逗号，可能会被忽略，从而导致错误，所以在声明任何变量的时候，最好显式的声明一次这个变量，让代码变得更清晰，降低错误率
+24. 布尔字面量 ---还不知道是什么，但是文档让我不要混淆布尔对象的真和假，与布尔基础值的true和false
+25. 整数 --- 没有写成字面量，严格模式下八进制字面量必须以0O或者0o开头，不能以0开头 --- 注意哦是字面量，不是八进制数值，虽然表示了，但是还是不知道这个字面量怎么个写法，难道那一串都是一个字面量的表示方法
+26. 浮点数字面量 --- 感觉就是科学计数法的简单表示方法
+```
+[(+|-)][digits][.digits][(E|e)[(+|-)]digits]
+```
+27. 对象字面量，感觉就是属性值里边可以放函数，但其实没有任何特别声明，就能直接这个就是一个对象字面量，字面量对象里边可以嵌套新的字面量对象节点，字面量的属性可以是任意字符串，包括空串，但是如果不是合法的标识符，就必须用""包括起来,访问的时候也要注意方式，不能用.的方式访问了，只能用对象属性值下标的方式访问
+```
+var unusualPropertyNames = {
+  "": "An empty string",
+  "!": "Bang!"
+}
+console.log(unusualPropertyNames."");   // 语法错误: Unexpected string
+console.log(unusualPropertyNames[""]);  // An empty string
+console.log(unusualPropertyNames.!);    // 语法错误: Unexpected token !
+console.log(unusualPropertyNames["!"]); // Bang!
+```
+```
+var foo = {a: "alpha", 2: "two"};
+console.log(foo.a);    // alpha
+console.log(foo[2]);   // two
+//console.log(foo.2);  // SyntaxError: missing ) after argument list
+//console.log(foo[a]); // ReferenceError: a is not defined
+console.log(foo["a"]); // alpha
+console.log(foo["2"]); // two
+```
+28. 在ES2015中，基于对象的设计，对象字面量扩展支持在创建时设置原型，支持super调用父级元素，支持用表达式动态的计算属性名
+```
+ [ 'prop_' + (() => 42)() ]: 42
+```
+```
+var obj = {
+    // __proto__
+    __proto__: theProtoObj,
+    // Shorthand for ‘handler: handler’
+    handler,
+    // Methods
+    toString() {
+     // Super calls
+     return "d " + super.toString();
+    },
+    // Computed (dynamic) property names
+    [ 'prop_' + (() => 42)() ]: 42
+};
+```
+29. RegExp字面值 --- 这个是真的是字面值了，不是字面量哦，用两个正斜杠围起来的正则表达式
+30. 字符串字面量 可以在字符字面值上使用类似String.length的属性
+```
+console.log("John's cat".length) 
+// 将打印字符串中的字符个数（包括空格） 
+// 结果为：10
+```
+31. 模板字面量，模板字符串提供了一些语法糖来操作字符串，可以在模板字符串之前添加一个tag来自定义字符串的解析过程，这个可以用来防止注入攻击，或者用来建立字符串的高级数据，抽象，比如说$这个符号，在JQuery中被种草了
+```
+// Basic literal string creation
+`In JavaScript '\n' is a line-feed.`
+// Multiline strings
+`In JavaScript this is
+ not legal.`
+// String interpolation
+var name = "Bob", time = "today";
+`Hello ${name}, how are you ${time}?`
+// Construct an HTTP request prefix is used to interpret the replacements and construction
+POST`http://foo.org/bar?a=${a}&b=${b}
+     Content-Type: application/json
+     X-Credentials: ${credentials}
+     { "foo": ${foo},
+       "bar": ${bar}}`(myOnReadyStateChangeHandler);
+```
+33. 除非特别需要建立字符串对象，否则应该始终使用字符串字面值，可能是因为节省空间和处理时间吗？
+#### 特殊字符
+34. 特殊字符有一个表，严格模式下，不能使用八进制的转义字符，之前好像提及过，因为只能0O这种才能转义，但是Unicode应该没有这样，座椅不支持八进制的转义字符
+35. 在换行之前用反斜线\，转义之后并没有换行，但是反斜线会被消除，只是说在代码编辑的时候，将一行拆成多行书写
+```
+var poem = 
+"Roses are red,\n\
+Violets are blue.\n\
+Sugar is sweet,\n\
+and so is foo."
+console.log(poem)
+//这个是能够能多行输出字符串
+```
+```
+var str = "this string \
+is broken \
+across multiple\
+lines."
+console.log(str);   // this string is broken across multiplelines.
+//这个是一行输出字符串
+```
+## 表达式和运算符
+### 解构
+1. 其实没看出来有什么大用处 --- 没用过
+```
+var foo = ["one", "two", "three"];
+// 不使用解构
+var one   = foo[0];
+var two   = foo[1];
+var three = foo[2];
+// 使用解构
+var [one, two, three] = foo;
+```
+2. 除0会产生infinite => 表示一个数值，无穷大 ，这个值的特点
+    + writable : false
+    + enumerber : false
+    + configurable : false
+3. x ** y 表示 x的y次方
+4. 没有无符号左移    无符号右移，代表移动之后没有符号位
+5. 能被转换成false的有null 、undefined、0、""、NaN
+```
+var a1 = "Cat" && "Dog";    // t && t returns Dog
+var o5 = "Cat" || "Dog";    // t || t returns Cat
+var o6 = false || "Cat";    // f || t returns Cat
+var o7 = "Cat" || false;    // t || f returns Cat
+```
+6. 反正 ||运算 和 &&运算就跟其他语言一样，注意一下短路运算就好了，
+7. delete操作符 为什么会放到这个区块呢，嘤嘤嘤？能够删除一个对象，或者一个对象的属性，或者一个数组中的某个键值，第四行的代码只有和with使用是才是合法的，从某个对象中删除一个属性，这个对象就是和with搭配的，不然也不知道到底删哪个对象的property
+```
+delete objectName;
+delete objectName.property;
+delete objectName[index];
+delete property; // legal only within a with statement
+```
+8. 能够使用delete删除各式各样的隐式声明，但是被var声明的除外 --- 哪种叫做隐式声明呐？？？
+9. 如果delete删除成功，那么那个属性的值就会变成undefined，删除成功返回true
+10. 这一段挺绕的，意思是如果用delete删除了一个数组中的元素，那么这个元素在遍历数组的时候就会找不到，但是能够通过寻址返回undefined，数值未被定义。如果让这个元素存在但是值为undefined，就直接赋值好了，数组遍历循环的时候还能找到这个函数
+```
+var trees = new Array("redwood", "bay", "cedar", "oak", "maple");
+delete trees[3];
+if (3 in trees) {
+  // 不会被执行
+}
+```
+```
+var trees = new Array("redwood", "bay", "cedar", "oak", "maple");
+trees[3] = undefined;
+if (3 in trees) {
+  // this gets executed（会被执行）
+}
+```
+11. typeof操作符 返回这个值所属的对象字符串
+    + typeof null 挺有趣的
+    + typeof对于属性值，返回这个属性值的类型
+    + 对于方法和函数，返回function
+    + 对于预定义的对象，会返回如下结果
+```
+typeof null; // returns "object"
+```
+```
+typeof Date;     // returns "function"
+typeof Function; // returns "function"
+typeof Math;     // returns "object"
+typeof Option;   // returns "function"
+typeof String;   // returns "function"
+```
+12. void运算符，妙用：使用void运算符指明一个超文本链接，该文本是有效的，但是不会在当前文档进行加载
+    + 如下创建一个超文本链接，用户点击，不会有任何效果
+    + 当用户单击它时，提交一个表格
+```
+<a href="javascript:void(0)">Click here to do nothing</a>
+```
+```
+<a href="javascript:void(document.form.submit())">
+Click here to submit</a>
+```
+### 关系操作符
+13. in操作符，如果所指的属性确实存在于对象中，返回true
+```
+// Arrays
+var trees = new Array("redwood", "bay", "cedar", "oak", "maple");
+0 in trees;        // returns true
+3 in trees;        // returns true
+6 in trees;        // returns false
+"bay" in trees;    // returns false (you must specify the index number,
+                   // not the value at that index)
+"length" in trees; // returns true (length is an Array property)
+// Predefined objects
+"PI" in Math;          // returns true
+var myString = new String("coral");
+"length" in myString;  // returns true
+// Custom objects
+var mycar = {make: "Honda", model: "Accord", year: 1998};
+"make" in mycar;  // returns true
+"model" in mycar; // returns true
+```
+14. instanceof运算符，注意不要跟typeof运算符混淆了
 
 
 
