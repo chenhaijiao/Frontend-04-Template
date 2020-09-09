@@ -396,7 +396,370 @@ var mycar = {make: "Honda", model: "Accord", year: 1998};
 "make" in mycar;  // returns true
 "model" in mycar; // returns true
 ```
-14. instanceof运算符，注意不要跟typeof运算符混淆了
-
-
-
+14. instanceof运算符，注意不要跟typeof运算符混淆了，instanceof是theDay是不是一个Date对象
+```
+var theDay = new Date(1995, 12, 17);
+if (theDay instanceof Date) {
+  // statements to execute
+}
+```
+15. 运算符优先级，需要用到的时候再找吧
+### 基本表达式
+16. this，用来被指代当前使用的对象，需要深入理解好吧
+### 数值推导
+17. 数值推导，一些API还在实验中，计划加入，了解一下，Comprehensions是快速的通过一个数组生成另一个数组，挺厉害的，应该要加很多属性
+18. 扩展语句,如下代码的赋值方式，确实省了一些事情，也挺好用的，还用在函数传参
+```
+var parts = ['shoulder', 'knees'];
+var lyrics = ['head', ...parts, 'and', 'toes'];
+```
+```
+function f(x, y, z) { }
+var args = [0, 1, 2];
+f(...args);
+```
+## 数字和日期（这几个对象里边的方法和属性，都去看看文档）
+1. 在ES6中使用八进制数值0O或者0o，不然不行；在ES5中严格模式下禁止使用八进制数值
+2. 假如0x后面的数字超出规定范围(0123456789ABCDEF)，那么就会提示这样的语法错误(SyntaxError)："Identifier starts immediately after numeric literal".
+### Number
+3. Number.isSafeInteger()
+4. toExponential() 返回一个数值的科学计数法形式
+5. toFixed() 返回固定位的小数，没有那么多位小数就填充0
+6. toPrecision() 指定一个精度数字，返回科学计数法形式，目的是保留你想要的精度  
+Number还有很多属性，自己多用用就会了
+### Math
+7. 和其他对象不同，不能创建一个自己的Math对象，typeof Math 返回的是 object也是有一定道理的
+### Date
+8. Date 对象的范围是相对距离 UTC 1970年1月1日 的前后 100,000,000 天。getTime方法返回从1970年1月1日00:00:00的毫秒数。对于比较时间比较有用，简单粗暴
+9. 在下边的例子中，JSClock()函数返回了用数字时钟格式的时间：
+```
+function JSClock() {
+  var time = new Date();
+  var hour = time.getHours();
+  var minute = time.getMinutes();
+  var second = time.getSeconds();
+  var temp = "" + ((hour > 12) ? hour - 12 : hour);
+  if (hour == 0)
+    temp = "12";
+  temp += ((minute < 10) ? ":0" : ":") + minute;
+  temp += ((second < 10) ? ":0" : ":") + second;
+  temp += (hour >= 12) ? " P.M." : " A.M.";
+  return temp;
+}
+```
+## 文本格式化和字符串的使用问题（多看一下String这个类）
+1. Unicode字元溢出，有了这个处理方式之后，任何字符都可以使用16进制数来进行转义
+```
+'\u{2F804}'
+// the same with simple Unicode escapes
+'\uD87E\uDC04'
+```
+2. 除非必要，尽量使用字符串字面量,下面这个实例，除非必要，也尽量少使用eval()函数，性能不好且保密性不好
+```
+const firstString = '2 + 2'; //创建一个字符串字面量
+const secondString = new String('2 + 2'); // 创建一个字符串对象
+typeof firstString // string
+typeof secondString // object
+eval(firstString); // 返回数字 4
+eval(secondString); // 返回字符串 "2 + 2"
+```
+3. 字符串字面量是一个类数组对象
+```
+const hello = 'Hello, World!';
+const helloLength = hello.length;
+hello[0] = 'L'; // 无效，因为字符串是不变的
+hello[0]; // 返回 "H"
+```
+4. String 中的方法match, replace, search 通过正则表达式来工作
+5. 模板字符串可以使用``反勾号，里面的字符就不需要转义了，如果使用""还需要加\n\才能换行
+```
+console.log(`string text line 1
+string text line 2`);
+// "string text line 1
+// string text line 2"
+```
+6. 现在使用模板字符串，可以使用语法糖让类似功能的实现代码更具可读性
+```
+const five = 5;
+const ten = 10;
+console.log('Fifteen is ' + (five + ten) + ' and not ' + (2 * five + ten) + '.');
+// "Fifteen is 15 and not 20."
+// 这是我的操作了
+```
+```
+const five = 5;
+const ten = 10;
+console.log(`Fifteen is ${five + ten} and not ${2 * five + ten}.`);
+// "Fifteen is 15 and not 20."
+```
+### 国际化
+7. Intl对象， Collator, NumberFormat, 和 DateTimeFormat 对象的构造函数是Intl对象的属性.
+    + DateTimeFormat 日期时间格式化
+    + NumberFormat 数字格式化
+    + Collator 定序 字符串按照一个什么样的方式排序，这个对象就很方便
+```
+var gasPrice = new Intl.NumberFormat("en-US",
+                        { style: "currency", currency: "USD",
+                          minimumFractionDigits: 3 });
+console.log(gasPrice.format(5.259)); // $5.259
+var hanDecimalRMBInChina = new Intl.NumberFormat("zh-CN-u-nu-hanidec",
+                        { style: "currency", currency: "CNY" });
+console.log(hanDecimalRMBInChina.format(1314.25)); // ￥ 一,三一四.二五
+```
+```
+var names = ["Hochberg", "Hönigswald", "Holzman"];
+var germanPhonebook = new Intl.Collator("de-DE-u-co-phonebk");
+// as if sorting ["Hochberg", "Hoenigswald", "Holzman"]:
+console.log(names.sort(germanPhonebook.compare).join(", "));
+// logs "Hochberg, Hönigswald, Holzman"
+```
+## 正则表达式
+1. 用到了括号，它在正则表达式中常用作记忆设备。即这部分所匹配的字符将会被记住以备后续使用，例如使用括号的子字符串匹配。
+2. 这一段就不做笔记了，得多看几遍
+3.  /Chapter (\d+)\.\d*/  小数点前的 \ 意味着这个pattern必须寻找字面字符 '.')
+4. 括号中的"?:"，这种模式匹配的子字符串将不会被记住。比如，(?:\d+)匹配一次或多次数字字符，但是不能记住匹配的字符。
+5. 正则表达式可以被用于 RegExp 的 exec 和 test 方法以及 String 的 match、replace、search 和 split 方法。 => JavaScript手册
+```
+var myArray = /d(b+)d/g.exec("cdbbdbsbz");
+// 和 "cdbbdbsbz".match(/d(b+)d/g); 相似。
+// 但是 "cdbbdbsbz".match(/d(b+)d/g) 输出数组 [ "dbbd" ]，
+// 而 /d(b+)d/g.exec('cdbbdbsbz') 输出数组 [ "dbbd", "bb", index: 1, input: "cdbbdbsbz" ].
+```
+6. lastIndex开始下一个匹配的起始索引值。（这个属性只有在使用g参数时可用在 通过参数进行高级搜索 一节有详细的描述.)
+7. 当发生/d(b+)d/g使用两个不同状态的正则表达式对象，lastIndex属性会得到不同的值。如果你需要访问一个正则表达式的属性，则需要创建一个对象初始化生成器，你应该首先把它赋值给一个变量。
+```
+var myArray = /d(b+)d/g.exec("cdbbdbsbz");
+console.log("The value of lastIndex is " + /d(b+)d/g.lastIndex);
+The value of lastIndex is 0
+```
+```
+var myRe = /d(b+)d/g;
+var myArray = myRe.exec("cdbbdbsbz");
+console.log("The value of lastIndex is " + myRe.lastIndex);
+The value of lastIndex is 5
+```
+8. 匹配到的替换文本中，脚本使用替代的$ 1,$ 2表示第一个和第二个括号的子字符串匹配。
+```
+ var re = /(\w+)\s(\w+)/;
+var str = "John Smith";
+var newstr = str.replace(re, "$2, $1");
+console.log(newstr);
+```
+9. 正则表达式有六个可选参数 (flags) 允许全局和不分大小写搜索等。这些参数既可以单独使用也能以任意顺序一起使用, 并且被包含在正则表达式实例中。
+    + g 全局搜索。
+    + i 不区分大小写搜索。
+    + m 多行搜索。
+    + s 允许 . 匹配换行符。
+    + u 使用unicode码的模式进行匹配。
+    + y 执行“粘性(sticky)”搜索,匹配从目标字符串的当前位置开始。
+10. 使用.exec()方法时，与'g'标志关联的行为是不同的。 （“class”和“argument”的作用相反：在.match()的情况下，字符串类（或数据类型）拥有该方法，而正则表达式只是一个参数，而在.exec()的情况下，它是拥有该方法的正则表达式，其中字符串是参数。对比str.match(re)与re.exec(str) ), 'g'标志与.exec()方法一起使用获得迭代进展。
+11. m标志用于指定多行输入字符串应该被视为多个行。如果使用m标志，^和$匹配的开始或结束输入字符串中的每一行，而不是整个字符串的开始或结束。
+## 数组对象
+1. 括号语法被称为 "数组字面值" 或 "数组初始化器", 它比其他创建数组的方式更便捷，所以通常是首选。详细内容参见 Array literals ，就不创建新的数组对象的那个，直接加方括号。
+2. 调用 arr.length 会返回数组长度，但是数组实际上包含了空的（undefined）元素。 因此在数组上使用 for...in 循环，将不会返回任何的值 ，只要数组值是空的，就无法进入循环的意思吗,但是数组值为undefined，是能够进入循环的
+3. 数组长度不是整数，将会报错
+```
+var arr = Array(9.3);  // RangeError: Invalid array length
+```
+4. 注意，在数组定义时省略的元素不会在forEach遍历时被列出，但是手动赋值为undefined的元素是会被列出的
+5. push,pop,unshift,shift
+```
+var myArray = new Array ("1", "2", "3");
+myArray.unshift("4", "5"); 
+// myArray becomes ["4", "5", "1", "2", "3"]
+```
+6. splice(index, count_to_remove, addElement1, addElement2, ...)从数组移出一些元素，（可选）并替换它们。
+```
+var myArray = new Array ("1", "2", "3", "4", "5");
+myArray.splice(1, 3, "a", "b", "c", "d"); 
+// myArray is now ["1", "a", "b", "c", "d", "5"]
+// This code started at index one (or where the "2" was), 
+// removed 3 elements there, and then inserted all consecutive
+// elements in its place.
+```
+7. map(callback[, thisObject]) 在数组的每个单元项上执行callback函数，并把返回包含回调函数返回值的新数组
+8. filter(callback[, thisObject])跟every(callback[, thisObject])差不多，但是前一个返回的是一个所有符合条件的数组项的新数组，后一个判断是不是所有数组项都符合这个条件，返回的是true or false；some(callback[, thisObject]) 顾名思义
+9. 以上方法都带一个被称为迭代方法的的回调函数，因为他们以某种方式迭代整个数组。都有一个可选的第二参数 thisObject，如果提供了这个参数，thisObject 变成回调函数内部的 this 关键字的值。如果没有提供，例如函数在一个显示的对象上下文外被调用时，this 将引用全局对象(window).
+10. 实际上在调用回调函数时传入了3个参数。第一个是当前元素项的值，第二个是它在数组中的索引，第三个是数组本身的一个引用。 JavaScript 函数忽略任何没有在参数列表中命名的参数，因此提供一个只有一个参数的回调函数是安全的，例如 alert 。----没看懂
+11. reduce(callback[, initialValue])和reduceRight(callback[, initalvalue])，一个从左到右，一个从右到左。他们应该使用在那些需要把数组的元素两两递归处理，并最终计算成一个单一结果的算法。
+### 数组和正则表达式
+12.  RegExp.exec(), String.match() 和 String.split() 的返回值是一个数组。
+### 类数组对象
+13. 一些 JavaScript 对象, 例如 document.getElementsByTagName() 返回的 NodeList 或者函数内部可用的 arguments 对象，他们表面上看起来，外观和行为像数组，但是不共享他们所有的方法。例如 arguments 对象就提供一个 length 属性，但是不实现 forEach() 方法。
+```
+//没看太懂想要表达什么意思
+function printArguments() {
+  Array.prototype.forEach.call(arguments, function(item) {
+    console.log(item);
+  });
+}
+```
+### 数组推导式
+14. 推导式可以经常被用在那些需要调用 map() 和 filter()函数的地方，或作为一种结合这两种方式。
+15. 推导式这个不是在出一个新的对象吗，回过头仔细看看
+```
+var numbers = [1, 2, 3, 4];
+var doubled = [for (i of numbers) i * 2];
+console.log(doubled); // logs 2,4,6,8
+```
+16. 数组推导式的输入不一定必须是数组; 迭代器和生成器 也是可以的。
+```
+var str = 'abcdef';
+var consonantsOnlyStr = [c for (c of str) if (!(/[aeiouAEIOU]/).test(c))  ].join(''); // 'bcdf'
+var interpolatedZeros = [c+'0' for (c of str) ].join(''); // 'a0b0c0d0e0f0'
+//输入形式是不能保存的，所以我们要使用join()回复到一个字符串。
+```
+### 类型化数组
+17. JavaScript typed arrays 是类数组对象（array-like object），其提供访问原始二进制数据的机制。 专门的优化将有助于JavaScript代码能够快速和容易地操纵原始二进制数据类型的数组。
+18. JavaScript类型数组被分解为缓冲(Buffer)和视图(views)。视图提供了一个上下文，即数据类型、起始偏移量和元素数，这些元素将数据转换为实际类型数组。 ---- 实际的并不了解怎么操作的
+19.  ArrayBuffer是一种数据类型，用于表示一个通用的、固定长度的二进制数据缓冲区。你不能直接操纵一个ArrayBuffer中的内容；你需要创建一个数组类型视图或DataView来代表特定格式的缓冲区，并从而实现读写缓冲区的内容。
+20. 类型数组视图具有自描述性的名字，并且提供数据类型信息，例如Int8, Uint32, Float64等等。如一个特定类型数组视图Uint8ClampedArray. 它意味着数据元素只包含0到255的整数值。它通常用于Canvas数据处理-----下面有个表格（clamp-强化）
+## 带键集合 Map和Set（weakMap和weakSet）
+### 映射
+#### Map对象
+1. Map对象一些基本的属性方法 get、has、delete、clear
+#### Object和Map对象的比较
+2. Map具有更多优势，那是肯定的呀，根据大众需求封装好的专门的类，Object也可以封装出来呀
+    + Object的键均为Strings类型，在Map里键可以是任意类型。
+    + 必须手动计算Object的尺寸，但是可以很容易地获取使用Map的尺寸。
+    + Map的遍历遵循元素的插入顺序。
+    + Object有原型，所以映射中有一些缺省的键。因为重复的键值对会被覆盖的（可以用 map = Object.create(null) 回避）。
+3. 这三条提示可以帮你决定用Map还是Object：
+    + 如果键在运行时才能知道，或者所有的键类型相同，所有的值类型相同，那就使用Map
+    + 如果需要将原始值存储为键，则使用Map，因为Object将每个键视为字符串，不管它是一个数字值、布尔值还是任何其他原始值。
+    + 如果需要对个别元素进行操作，使用Object。
+#### WeakMap对象
+4. 它的键被弱保持，也就是说，当其键所指对象没有其他地方引用的时候，它会被GC回收掉。
+5. 与Map对象不同的是，WeakMap的键是不可枚举的。不提供列出其键的方法。列表是否存在取决于垃圾回收器的状态，是不可预知的。
+6. WeakMap对象的一个用例是存储一个对象的私有数据或隐藏实施细节---因为回收机制问题吗，显得比较隐私比较安全
+7. 对象内部的私有数据和方法被存储在WeakMap类型的privates变量中。所有暴露出的原型和情况都是公开的，而其他内容都是外界不可访问的，因为模块并未导出privates对象。----没看太懂
+```
+const privates = new WeakMap();
+function Public() {
+  const me = {
+    // Private data goes here
+  };
+  privates.set(this, me);
+}
+Public.prototype.method = function () {
+  const me = privates.get(this);
+  // Do stuff with private data in `me`...
+};
+module.exports = Public;
+```
+### 集合
+#### Set对象（不可重复）
+8. Set对象是一组值的集合，这些值是不重复的，可以按照添加顺序来遍历。
+#### 数组（Array）到集合（Set）的转换
+9. 可以使用Array.from或展开操作符来完成集合到数组的转换。同样，Set的构造器接受数组作为参数，可以完成从Array到Set的转换。需要重申的是，Set对象中的值不重复，所以数组转换为集合时，所有重复值将会被删除。
+```
+Array.from(mySet);
+[...mySet2];
+mySet2 = new Set([1,2,3,4]);
+```
+#### Array 和 Set 的对比
+10. 一般情况下，在JavaScript中使用数组来存储一组元素，而新的集合对象有这些优势：
+    + 数组中用于判断元素是否存在的indexOf 函数效率低下。
+    + Set对象允许根据值删除元素，而数组中必须使用基于下标的 splice 方法。
+    + 数组的indexOf方法无法找到NaN值。-----注意，头一次知道还有这种说法
+    + Set对象存储不重复的值，所以不需要手动处理包含重复值的情况。
+#### WeakSet
+11. WeakSet对象是一组对象的集合。WeakSet中的对象不重复且不可枚举。
+12. 与Set对象的主要区别有：
+    + WeakSets中的值必须是对象类型，不可以是别的类型 ----什么意思呀
+    + WeakSet的“weak”指的是，对集合中的对象，如果不存在其他引用，那么该对象将可被垃圾回收。于是不存在一个当前可用对象组成的列表，所以WeakSets不可枚举
+13. WeakSet的用例很有限，比如使用DOM元素作为键来追踪它们而不必担心内存泄漏。
+#### Map的键和Set的值的等值判断
+14. Map的键和Set的值的等值判断都基于same-value-zero algorithm --- 没看懂呀。
+    + 判断使用与===相似的规则。
+    + -0和+0相等。
+    + NaN与自身相等（与===有所不同）。
+## 处理对象
+### 对象和属性
+1. 对象中未赋值的属性的值为undefined（而不是null）。
+2. 一个属性的名称如果不是一个有效的 JavaScript 标识符（例如，一个由空格或连字符，或者以数字开头的属性名），就只能通过方括号标记访问。这个标记法在属性名称是动态判定（属性名只有到运行时才能判定）时非常有用。
+```
+// 同时创建四个变量，用逗号分隔
+var myObj = new Object(),
+    str = "myString",
+    rand = Math.random(),
+    obj = new Object();
+myObj.type              = "Dot syntax";
+myObj["date created"]   = "String with space";
+myObj[str]              = "String value";
+myObj[rand]             = "Random Number";
+myObj[obj]              = "Object";
+myObj[""]               = "Even an empty string";
+console.log(myObj);
+//因为JavaScript中的对象只能使用String类型作为键类型。
+```
+3. 注意obj.hasOwnProperty(i)此方法的使用，我一般这样循环的时候，是不会去这样判断一下的
+```
+function showProps(obj, objName) {
+  var result = "";
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+        result += objName + "." + i + " = " + obj[i] + "\n";
+    }
+  }
+  return result;
+}
+```
+### 枚举一个对象所有的属性
+4. 从ES5开始，主要有三种方法（感觉就是深拷贝浅拷贝的区别）
+    + for...in 循环 该方法依次访问一个对象及其原型链中所有可枚举的属性。 --- 包括原型链哦
+    + Object.keys(o) 该方法返回对象 o 自身包含（不包括原型中）的所有可枚举属性的名称的数组。----不包括原型哦
+    + Object.getOwnPropertyNames(o) 该方法返回对象 o 自身包含（不包括原型中）的所有属性(无论是否可枚举)的名称的数组。-----？？？都不可以枚举你还要总结出来，说实话有点鬼畜
+### 使用对象初始化器 --没看太懂
+5. 如果一个对象是通过在顶级脚本的对象初始化器创建的，则 JavaScript 在每次遇到包含该对象字面量的表达式时都会创建对象。同样的，在函数中的初始化器在每次函数调用时也会被创建。
+```
+var obj = { property_1:   value_1,   // property_# 可以是一个标识符...
+            2:            value_2,   // 或一个数字...
+           ["property" +3]: value_3,  //  或一个可计算的key名... 
+            // ...,
+            "property n": value_n }; // 或一个字符串
+```
+6. 使用 Object.create 方法
+7.  prototype 属性
+8. 通过 this 引用对象
+9. 定义 getters 与 setters
+```
+var o = {
+  a: 7,
+  get b() { 
+    return this.a + 1;
+  },
+  set c(x) {
+    this.a = x / 2
+  }
+};
+console.log(o.a); // 7
+console.log(o.b); // 8
+o.c = 50;
+console.log(o.a); // 25
+```
+```
+//可能更能表现JavaScript语法的动态特性,但也会使代码变得难以阅读和理解。
+var o = { a:0 }
+Object.defineProperties(o, {
+    "b": { get: function () { return this.a + 1; } },
+    "c": { set: function (x) { this.a = x / 2; } }
+});
+o.c = 10 // Runs the setter, which assigns 10 / 2 (5) to the 'a' property
+console.log(o.b) // Runs the getter, which yields a + 1 or 6
+```
+### 删除属性
+10. 用 delete 操作符删除一个不是继承而来的属性 ---- 注意不是继承来的属性，自己的可以删，但是父节点还是动不了，删除各式各样的隐式节点，var 声明的不可以删除，但是不是用var声明的全局变量是可以通过delete删除的
+```
+g = 17;
+delete g;
+```
+### 比较对象
+11. 在 JavaScript 中 objects 是一种引用类型。两个独立声明的对象永远也不会相等，即使他们有相同的属性，只有在比较一个对象和这个对象的引用时，才会返回true.
+```
+/ 两个变量, 两个具有同样的属性、但不相同的对象
+var fruit = {name: "apple"};
+var fruitbear = {name: "apple"};
+fruit == fruitbear // return false
+fruit === fruitbear // return false
+```
