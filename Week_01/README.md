@@ -795,7 +795,7 @@ chris.__proto__.__proto__.__proto__.__proto__.__proto__ == null;
 ```
 function instanceOf(object, constructor) {
    while (object != null) {
-      if (object == constructor.prototype)
+      if (object == constructor.prototype)//这一句可以好好回味一下
          return true;
       if (typeof object == 'xml') {
         return constructor.prototype == XML.prototype;
@@ -804,4 +804,9 @@ function instanceOf(object, constructor) {
    }
    return false;
 }
+instanceOf (chris, Engineer)
+instanceOf (chris, WorkerBee)
+instanceOf (chris, Employee)
+instanceOf (chris, Object)
 ```
+7. 某些面向对象语言支持多重继承。也就是说，对象可以从无关的多个父对象中继承属性和属性值。JavaScript 不支持多重继承。
