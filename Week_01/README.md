@@ -757,9 +757,51 @@ delete g;
 ### 比较对象
 11. 在 JavaScript 中 objects 是一种引用类型。两个独立声明的对象永远也不会相等，即使他们有相同的属性，只有在比较一个对象和这个对象的引用时，才会返回true.
 ```
-/ 两个变量, 两个具有同样的属性、但不相同的对象
+// 两个变量, 两个具有同样的属性、但不相同的对象
 var fruit = {name: "apple"};
 var fruitbear = {name: "apple"};
 fruit == fruitbear // return false
 fruit === fruitbear // return false
+```
+```
+// 两个变量, 同一个对象
+var fruit = {name: "apple"};
+var fruitbear = fruit;  // 将fruit的对象引用(reference)赋值给 fruitbear
+                        // 也称为将fruitbear“指向”fruit对象
+// fruit与fruitbear都指向同样的对象
+fruit == fruitbear // return true
+fruit === fruitbear // return true
+```
+## 对象模型的细节
+1. 基于类 vs 基于原型的语言
+    + 基于类的面向对象语言，比如 Java 和 C++，是构建在两个不同实体之上的：类和实例。
+    + 基于原型的语言（如 JavaScript）并不存在这种区别：它只有对象。基于原型的语言具有所谓原型对象(prototypical object)的概念。原型对象可以作为一个模板，新对象可以从中获得原始的属性。任何对象都可以指定其自身的属性，既可以是创建时也可以在运行时创建。而且，任何对象都可以作为另一个对象的原型(prototype)，从而允许后者共享前者的属性。 --- 确实，等级没那么分明，就比较动态灵活吧,所有对象都是实例，遵循原型链继承属性。
+2. 在ES6中引入了 类定义 ，但它实际上是已有的原型继承方式的语法糖而已，并没有引入新的面向对象继承模型。
+3. 构造器函数或原型指定实例的初始属性集。允许动态地向单个的对象或者整个对象集中添加或移除属性。
+4. 继承的另一种途径是使用call() / apply() 方法。
+5. 在访问一个对象的属性时，JavaScript 将执行下面的步骤：
+    + 检查对象自身是否存在。如果存在，返回值。
+    + 如果本地值不存在，检查原型链（通过 __proto__ 属性）
+    + 如果原型链中的某个对象具有指定属性，则返回值。
+    + 如果这样的属性不存在，则对象没有该属性，返回 undefined。
+6. 特殊的 __proto__ 属性是在构建对象时设置的；设置为构造器的 prototype 属性的值。所以表达式 new Foo() 将创建一个对象，其 __proto__ == Foo.prototype。因而，修改 Foo.prototype 的属性，将改变所有通过 new Foo() 创建的对象的属性的查找。
+```
+chris.__proto__ == Engineer.prototype;
+chris.__proto__.__proto__ == WorkerBee.prototype;
+chris.__proto__.__proto__.__proto__ == Employee.prototype;
+chris.__proto__.__proto__.__proto__.__proto__ == Object.prototype;
+chris.__proto__.__proto__.__proto__.__proto__.__proto__ == null;
+```
+```
+function instanceOf(object, constructor) {
+   while (object != null) {
+      if (object == constructor.prototype)
+         return true;
+      if (typeof object == 'xml') {
+        return constructor.prototype == XML.prototype;
+      }
+      object = object.__proto__;
+   }
+   return false;
+}
 ```
