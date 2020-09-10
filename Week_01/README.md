@@ -809,4 +809,397 @@ instanceOf (chris, WorkerBee)
 instanceOf (chris, Employee)
 instanceOf (chris, Object)
 ```
-7. 某些面向对象语言支持多重继承。也就是说，对象可以从无关的多个父对象中继承属性和属性值。JavaScript 不支持多重继承。
+7. 某些面向对象语言支持多重继承。也就是说，对象可以从无关的多个父对象中继承属性和属性值。JavaScript 不支持多重继承。JavaScript 属性值的继承是在运行时通过检索对象的原型链来实现的。因为对象只有一个原型与之关联，所以 JavaScript 无法动态地从多个原型链中继承。
+## Promise
+1. Promise 很棒的一点就是链式调用（chaining）。
+```
+const promise2 = doSomething().then(successCallback, failureCallback);
+```
+2. then() 函数会返回一个和原来不同的新的 Promise：promise2 不仅表示 doSomething() 函数的完成，也代表了你传入的 successCallback 或者 failureCallback 的完成，这两个函数也可以返回一个 Promise 对象，从而形成另一个异步操作，这样的话，在 promise2 上新增的回调函数会排在这个 Promise 对象的后面。
+```
+doSomething()
+.then(result => doSomethingElse(result))
+.then(newResult => doThirdThing(newResult))
+.then(finalResult => {
+  console.log(`Got the final result: ${finalResult}`);
+})
+.catch(failureCallback);
+//catch(failureCallback) 是 then(null, failureCallback) 的缩略形式。
+```
+3. 一定要有返回值，否则，callback 将无法获取上一个 Promise 的结果。(如果使用箭头函数，() => x 比 () => { return x; } 更简洁一些，但后一种保留 return 的写法才支持使用多个语句。）。
+### Catch 的后续链式操作
+4. 有可能会在一个回调失败之后继续使用链式操作，即，使用一个 catch，这对于在链式操作中抛出一个失败之后，再次进行新的操作会很有用。
+```
+new Promise((resolve, reject) => {
+    console.log('初始化');
+    resolve();
+})
+.then(() => {
+    throw new Error('有哪里不对了');    
+    console.log('执行「这个」”');
+})
+.catch(() => {
+    console.log('执行「那个」');
+})
+.then(() => {
+    console.log('执行「这个」，无论前面发生了什么');
+});
+//输出结果 因为抛出了错误 有哪里不对了，所以前一个 执行「这个」 没有被输出。
+//初始化
+//执行“那个”
+//执行“这个”，无论前面发生了什么
+```
+5. 通常，一遇到异常抛出，浏览器就会顺着 Promise 链寻找下一个 onRejected 失败回调函数或者由 .catch() 指定的回调函数。上面箭头函数的执行，相当于下面这段代码
+```
+try {
+  let result = syncDoSomething();
+  let newResult = syncDoSomethingElse(result);
+  let finalResult = syncDoThirdThing(newResult);
+  console.log(`Got the final result: ${finalResult}`);
+} catch(error) {
+  failureCallback(error);
+}
+```
+```
+async function foo() {
+  try {
+    const result = await doSomething();
+    const newResult = await doSomethingElse(result);
+    const finalResult = await doThirdThing(newResult);
+    console.log(`Got the final result: ${finalResult}`);
+  } catch(error) {
+    failureCallback(error);
+  }
+}
+```
+### Promise 拒绝事件
+6. 当 Promise 被拒绝时，会有下文所述的两个事件之一被派发到全局作用域（通常而言，就是window；如果是在 web worker 中使用的话，就是 Worker 或者其他 worker-based 接口）。这两个事件如下所示：
+    + rejectionhandled 当 Promise 被拒绝、并且在 reject 函数处理该 rejection 之后会派发此事件。
+    + unhandledrejection 当 Promise 被拒绝，但没有提供 reject 函数来处理该 rejection 时，会派发此事件。
+    + 区分就在于有没有提供reject函数来处理rejection，以上两种情况中，PromiseRejectionEvent 事件都有两个属性，一个是 promise 属性，该属性指向被驳回的 Promise，另一个是 reason 属性，该属性用来说明 Promise 被驳回的原因。简而言之，就是执行到某个promise出错被驳回的原因
+7. 一个特别有用的例子：当你使用 Node.js 时，有些依赖模块可能会有未被处理的 rejected promises，这些都会在运行时打印到控制台。你可以在自己的代码中捕捉这些信息，然后添加与 unhandledrejection 相应的处理函数来做分析和处理，或只是为了让你的输出更整洁。举例如下：
+```
+window.addEventListener("unhandledrejection", event => {
+  /* 你可以在这里添加一些代码，以便检查
+     event.promise 中的 promise 和
+     event.reason 中的 rejection 原因 */
+  event.preventDefault();
+}, false);
+//event 的 preventDefault() 方法是为了告诉 JavaScript 引擎当 Promise 被拒绝时不要执行默认操作，默认操作一般会包含把错误打印到控制台，Node 就是如此的。
+```
+### 在旧式回调 API 中创建 Promise
+8. 混用旧式回调和 Promise 可能会造成运行时序问题。如果 saySomething 函数失败了，或者包含了编程错误，那就没有办法捕获它了。这得怪 setTimeout。
+```
+setTimeout(() => saySomething("10 seconds passed"), 10000);
+```
+9. 幸运地是，我们可以用 Promise 来封装它。最好的做法是，将这些有问题的函数封装起来，留在底层，并且永远不要再直接调用它们：
+```
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+wait(10000).then(() => saySomething("10 seconds")).catch(failureCallback);
+//通常，Promise 的构造器接收一个执行函数(executor)，我们可以在这个执行函数里手动地 resolve 和 reject 一个 Promise。  
+//既然setTimeout 并不会真的执行失败，那么我们可以在这种情况下忽略 reject。
+```
+### 组合 （还需要多看几遍，感觉没怎么懂）
+10. Promise.resolve() 和 Promise.reject() 是手动创建一个已经 resolve 或者 reject 的 Promise 快捷方法。--- 没搞懂怎么用
+11. Promise.all() 和 Promise.race() 是并行运行异步操作的两个组合式工具。
+```
+//发起并行操作  
+Promise.all([func1(), func2(), func3()])
+.then(([result1, result2, result3]) => { /* use result1, result2 and result3 */ });
+```
+```
+//但是all()中的函数并没有顺序执行。如果希望then()之前的函数都是顺序执行的，可以考虑通过reduce函数来实现。这里会比较难以理解。
+//每个reduce执行的function本身就构造了first - next的顺序结构
+//Promise().then().then().then(),使用reduce使代码更简洁了
+//reduce()方法的第二个参数，他是一个初始值，在这里就是Promise.resolve()，他表示一个动作已经执行完成，可以进行下一个动作了。
+[func1, func2, func3].reduce((p, f) => p.then(f), Promise.resolve())
+.then(result3 => { /* use result3 */ });
+```
+```
+//一步一步变得更加精简
+const applyAsync = (acc,val) => acc.then(val);
+const composeAsync = (...funcs) => x => funcs.reduce(applyAsync, Promise.resolve(x));
+```
+```
+// 使用await async更加简单
+let result;
+for (const f of [func1, func2, func3]) {
+  result = await f(result);
+}
+/* use last result (i.e. result3) */
+```
+### 时序
+12. 传递到 then() 中的函数被置入到一个微任务队列中，而不是立即执行，这意味着它是在 JavaScript 事件队列的所有运行时结束了，且事件队列被清空之后，才开始执行 --- 但是下面这段代码为什么是这个顺序，还是不太明白。是因为Promise.resolve吗
+```
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+wait().then(() => console.log(4));
+Promise.resolve().then(() => console.log(2)).then(() => console.log(3));
+console.log(1); // 1, 2, 3, 4
+```
+### 嵌套
+13. 简便的 Promise 链式编程最好保持扁平化，不要嵌套 Promise，因为嵌套经常会是粗心导致的。
+14. 嵌套 Promise 是一种可以限制 catch 语句的作用域的控制结构写法。明确来说，嵌套的 catch 仅捕捉在其之前同时还必须是其作用域的 failureres，而捕捉不到在其链式以外或者其嵌套域以外的 error。如果使用正确，那么可以实现高精度的错误修复。
+```
+doSomethingCritical()
+.then(result => doSomethingOptional()
+  .then(optionalResult => doSomethingExtraNice(optionalResult))
+  .catch(e => {console.log(e.message)})) // 即使有异常也会忽略，继续运行;(最后会输出)
+.then(() => moreCriticalStuff())
+.catch(e => console.log("Critical failure: " + e.message));// 没有输出
+//这个内部的 catch  语句仅能捕获到 doSomethingOptional() 和 doSomethingExtraNice() 的失败，之后就恢复到moreCriticalStuff() 的运行。
+//重要提醒：如果 doSomethingCritical() 失败，这个错误仅会被最后的（外部）catch 语句捕获到。
+```
+### 常见错误示例
+15. 错误例
+    + 第一个错误是没有正确地将事物相连接。当我们创建新 Promise 但忘记返回它时，会发生这种情况。因此，链条被打破，或者更确切地说，我们有两个独立的链条竞争（同时在执行两个异步而非一个一个的执行）。这意味着 doFourthThing() 不会等待 doSomethingElse() 或 doThirdThing() 完成，并且将与它们并行运行，可能是无意的。单独的链也有单独的错误处理，导致未捕获的错误。
+    + 第二个错误是不必要地嵌套，实现第一个错误。嵌套还限制了内部错误处理程序的范围，如果是非预期的，可能会导致未捕获的错误。其中一个变体是 Promise 构造函数反模式，它结合了 Promise 构造函数的多余使用和嵌套。
+    + 第三个错误是忘记用 catch 终止链。这导致在大多数浏览器中不能终止的 Promise 链里的 rejection。
+    + 一个好的经验法则是总是返回或终止 Promise 链，并且一旦你得到一个新的 Promise，返回它.
+    + 使用 async/await 可以解决以下大多数错误，使用 async/await 时，最常见的语法错误就是忘记了 await 关键字。
+```
+// 错误示例，包含 3 个问题！
+doSomething().then(function(result) {
+  doSomethingElse(result) // 没有返回 Promise 以及没有必要的嵌套 Promise
+  .then(newResult => doThirdThing(newResult));
+}).then(() => doFourthThing());
+// 最后，是没有使用 catch 终止 Promise 调用链，可能导致没有捕获的异常
+```
+```
+//下面是修改后的平面化的代码：注意：() => x 是 () => { return x; } 的简写。
+doSomething()
+.then(function(result) {
+  return doSomethingElse(result);
+})
+.then(newResult => doThirdThing(newResult))
+.then(() => doFourthThing())
+.catch(error => console.log(error));
+```
+## 迭代器和生成器
+### 迭代器
+1. 若想了解更多详情，请参考：
+    + 迭代协议
+    + for...of
+    + function* 和 Generator
+    + yield 和 yield*
+2. Javascript中最常见的迭代器是Array迭代器，它只是按顺序返回关联数组中的每个值。 虽然很容易想象所有迭代器都可以表示为数组，但事实并非如此。 数组必须完整分配，但迭代器仅在必要时使用，因此可以表示无限大小的序列，例如0和无穷大之间的整数范围。
+```
+function makeRangeIterator(start = 0, end = Infinity, step = 1) {
+    let nextIndex = start;
+    let iterationCount = 0;
+    const rangeIterator = {
+       next: function() {
+           let result;
+           if (nextIndex < end) {
+               result = { value: nextIndex, done: false }
+               nextIndex += step;
+               iterationCount++;
+               return result;
+           }
+           return { value: iterationCount, done: true }
+       }
+    };
+    return rangeIterator;
+}
+```
+```
+let it = makeRangeIterator(1, 10, 2);
+let result = it.next();
+while (!result.done) {
+ console.log(result.value); // 1 3 5 7 9
+ result = it.next();
+}
+console.log("Iterated over sequence of size: ", result.value); // 5
+```
+3. 反射性地知道特定对象是否是迭代器是不可能的。 如果您需要这样做，请使用 Iterables.
+### 生成器函数
+4. 生成器函数使用 function*语法编写。 最初调用时，生成器函数不执行任何代码，而是返回一种称为Generator的迭代器。 通过调用生成器的下一个方法消耗值时，Generator函数将执行，直到遇到yield关键字。可以根据需要多次调用该函数，并且每次都返回一个新的Generator，但每个Generator只能迭代一次。
+```
+//我们现在可以调整上面的例子了。 此代码的行为是相同的，但实现更容易编写和读取。
+function* makeRangeIterator(start = 0, end = Infinity, step = 1) {
+    for (let i = start; i < end; i += step) {
+        yield i;
+    }
+}
+var a = makeRangeIterator(1,10,2)
+a.next() // {value: 1, done: false}
+a.next() // {value: 3, done: false}
+a.next() // {value: 5, done: false}
+a.next() // {value: 7, done: false}
+a.next() // {value: 9, done: false}
+a.next() // {value: undefined, done: true}
+//直接就有next可以给你用
+```
+5. 为了实现可迭代，一个对象必须实现 @@iterator 方法，这意味着这个对象（或其原型链中的任意一个对象）必须具有一个带 Symbol.iterator 键（key）的属性。可以多次迭代一个迭代器，或者只迭代一次。@@iterator方法中返回它本身，其中那些可以多次迭代的方法必须在每次调用@@iterator时返回一个新的迭代器。 --- 没太看明白
+6. 可迭代对象
+```
+var myIterable = {
+  *[Symbol.iterator]() {
+    yield 1;
+    yield 2;
+    yield 3;
+  }
+}
+for (let value of myIterable) { 
+    console.log(value); 
+}
+// 1
+// 2
+// 3
+// 或者
+[...myIterable]; // [1, 2, 3]
+```
+7. 内置可迭代对象 String、Array、TypedArray、Map 和 Set 都是内置可迭代对象，因为它们的原型对象都拥有一个 Symbol.iterator 方法。
+8. 用于可迭代对象的语法 一些语句和表达式专用于可迭代对象，例如 for-of 循环，展开语法，yield* 和 解构赋值。
+```
+for (let value of ['a', 'b', 'c']) {
+    console.log(value);
+}
+// "a"
+// "b"
+// "c"
+[...'abc']; // ["a", "b", "c"]
+function* gen() {
+  yield* ['a', 'b', 'c'];
+}
+gen().next(); // { value: "a", done: false }
+[a, b, c] = new Set(['a', 'b', 'c']);
+a; // "a"
+```
+```
+//解构赋值
+let a, b, rest;
+[a, b] = [10, 20];
+console.log(a);
+// expected output: 10
+console.log(b);
+// expected output: 20
+[a, b, ...rest] = [10, 20, 30, 40, 50];
+console.log(rest);
+// expected output: Array [30,40,50]
+```
+### 高级生成器
+9. next() 方法也接受一个参数用于修改生成器内部状态。传递给 next() 的参数值会被yield接收。要注意的是，传给第一个 next() 的值会被忽略。
+```
+function* fibonacci() {
+  var fn1 = 0;
+  var fn2 = 1;
+  while (true) {  
+    var current = fn1;
+    fn1 = fn2;
+    fn2 = current + fn1;
+    var reset = yield current;
+    if (reset) {
+        fn1 = 0;
+        fn2 = 1;
+    }
+  }
+}
+var sequence = fibonacci();
+console.log(sequence.next().value);     // 0
+console.log(sequence.next().value);     // 1
+console.log(sequence.next().value);     // 1
+console.log(sequence.next().value);     // 2
+console.log(sequence.next().value);     // 3
+console.log(sequence.next().value);     // 5
+console.log(sequence.next().value);     // 8
+console.log(sequence.next(true).value); // 0
+console.log(sequence.next().value);     // 1
+console.log(sequence.next().value);     // 1
+console.log(sequence.next().value);     // 2
+```
+10. 你可以通过调用其 throw() 方法强制生成器抛出异常，并传递应该抛出的异常值。这个异常将从当前挂起的生成器的上下文中抛出，就好像当前挂起的 yield 是一个 throw value 语句.如果在抛出的异常处理期间没有遇到 yield，则异常将通过调用 throw() 向上传播，对 next() 的后续调用将导致 done 属性为 true。
+11. Generator.prototype.throw() 
+```
+function* gen() {
+  while(true) {
+    try {
+       yield 42;
+    } catch(e) {
+      console.log("Error caught!");
+    }
+  }
+}
+var g = gen();
+g.next(); // { value: 42, done: false }
+g.throw(new Error("Something went wrong")); // "Error caught!"
+//强制生成器抛出异常，并传递应该抛出的异常值。
+```
+## 元编程
+### 代理 (完全没有看懂)
+1.  Proxy 对象可以拦截某些操作并实现自定义行为。
+    + handler 包含陷阱的占位符对象
+    + traps 提供属性访问的方法。这类似于操作系统中陷阱的概念。
+    + target 代理虚拟化的对象。它通常用作代理的存储后端。根据目标验证关于对象不可扩展性或不可配置属性的不变量（保持不变的语义）。
+    + invariants 实现自定义操作时保持不变的语义称为不变量。如果你违反处理程序的不变量，则会抛出一个 TypeError。
+2. handler.getPrototypeOf() 是一个代理（Proxy）方法，当读取代理对象的原型时，该方法就会被调用。
+    + Object.getPrototypeOf() 方法返回指定对象的原型（内部[[Prototype]]属性的值）
+    + isPrototypeOf() 方法用于测试一个对象是否存在于另一个对象的原型链上。prototypeObj.isPrototypeOf(object) 如果 prototypeObj 为 undefined 或 null，会抛出 TypeError。
+    + instanceof 运算符用于检测构造函数的 prototype 属性是否出现在某个实例对象的原型链上。
+```
+const monster1 = {
+  eyeCount: 4
+};
+const monsterPrototype = {
+  eyeCount: 2
+};
+const handler = {
+  getPrototypeOf(target) {
+    return monsterPrototype;
+  }
+};
+const proxy1 = new Proxy(monster1, handler);
+console.log(Object.getPrototypeOf(proxy1) === monsterPrototype);
+// expected output: true
+console.log(Object.getPrototypeOf(proxy1).eyeCount);
+// expected output: 2
+```
+```
+Object.getPrototypeOf()
+const prototype1 = {};
+const object1 = Object.create(prototype1);
+console.log(Object.getPrototypeOf(object1) === prototype1);
+// expected output: true
+```
+```
+function Foo() {}
+function Bar() {}
+function Baz() {}
+Bar.prototype = Object.create(Foo.prototype);
+Baz.prototype = Object.create(Bar.prototype);
+var baz = new Baz();
+console.log(Baz.prototype.isPrototypeOf(baz)); // true
+console.log(Bar.prototype.isPrototypeOf(baz)); // true
+console.log(Foo.prototype.isPrototypeOf(baz)); // true
+console.log(Object.prototype.isPrototypeOf(baz)); // true
+```
+3. handler.setPrototypeOf() 方法主要用来拦截 Object.setPrototypeOf().这个方法可以拦截以下操作:
+    + Object.setPrototypeOf()
+    + Reflect.setPrototypeOf()
+4. 还有很多个，没有一个个摘录了
+5. Proxy.revocable() 方法被用来创建可撤销的 Proxy 对象。这意味着 proxy 可以通过 revoke 函数来撤销，并且关闭代理。此后，代理上的任意的操作都会导致TypeError。
+6. Reflect 是一个内置对象，它提供了可拦截 JavaScript 操作的方法。该方法和代理句柄类似，但 Reflect 方法并不是一个函数对象。
+```
+Reflect.apply(Math.floor, undefined, [1.75]); 
+// 1;
+Reflect.apply(String.fromCharCode, undefined, [104, 101, 108, 108, 111]);
+// "hello"
+Reflect.apply(RegExp.prototype.exec, /ab/, ['confabulation']).index;
+// 4
+Reflect.apply(''.charAt, 'ponies', [3]);
+// "i"
+```
+7. Object.defineProperty() 方法会直接在一个对象上定义一个新属性，或者修改一个对象的现有属性，并返回此对象。备注：应当直接在 Object 构造器对象上调用此方法，而不是在任意一个 Object 类型的实例上调用。
+```
+const object1 = {};
+Object.defineProperty(object1, 'property1', {
+  value: 42,
+  writable: false
+});
+object1.property1 = 77;
+// throws an error in strict mode
+console.log(object1.property1);
+// expected output: 42
+```
+## JavaScript模块化
+### 模块化的背景
+1. 好消息是，最新的浏览器开始原生支持模块功能了，这是本文要重点讲述的。这会是一个好事情 — 浏览器能够最优化加载模块，使它比使用库更有效率：使用库通常需要做额外的客户端处理。使用JavaScript 模块依赖于import和 export
